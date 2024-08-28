@@ -1,0 +1,95 @@
+@import './config';
+@import './mixin';
+@import './color';
+@import './imageEditor';
+@import './ant-design/index';
+@import '../assets/public_icon/index.less';
+@import '../assets/menu_font/index.less';
+
+html,
+body,
+#app {
+  height: 100%;
+  .reset();
+  
+  * {
+    box-sizing: border-box;
+  }
+}
+
+#@{gx-prefix-pro}-admin {
+  height: 100%;
+}
+
+.@{gx-prefix}-admin-page-loading {
+  .gx-admin-spin {
+    font-size: 40px;
+  }
+}
+
+.@{gx-prefix-pro}-page-container-row {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.@{gx-prefix-pro}-page-container-content {
+  display: flex;
+  flex: auto;
+}
+
+.@{gx-prefix-pro}-page-container-extraContent {
+  display: flex;
+  flex: 0 1 auto;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.@{gx-prefix-pro}-iframe-page-main {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 0;
+  background-color: #fff;
+}
+
+.@{gx-prefix-pro}-scroll {
+  overflow: auto;
+  .scrollbar();
+}
+
+.@{gx-prefix}-image-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #fafafa;
+  color: #909399;
+  
+  .iconfont {
+    font-size: 24px;
+  }
+  
+  .anticon {
+    font-size: 24px;
+  }
+}
+
+.@{gx-prefix}-admin-a {
+  transition: color 0.3s;
+  cursor: pointer;
+  
+  &:hover {
+    --at-apply: text-hex-main;
+  }
+}
+
+#nprogress .bar {
+  --at-apply: bg-hex-main;
+}
+
+.clearfix {
+  .clearfix();
+}
