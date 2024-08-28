@@ -12,13 +12,8 @@ const indicator = h('i', {
 
 const { global, routes } = useStore()
 const route = useRoute()
-const router = useRouter()
 
 const loading = computed(() => routes.routerLoading)
-
-watchEffect(() => {
-  console.log(router.getRoutes())
-})
 </script>
 
 <template>
