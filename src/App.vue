@@ -16,7 +16,6 @@ const router = useRouter()
 
 const loading = computed(() => routes.routerLoading)
 
-
 watchEffect(() => {
   console.log(router.getRoutes())
 })
