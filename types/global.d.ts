@@ -1,13 +1,12 @@
-import Vue from 'vue'
+import type { DeepPartial, ProAliasToken as GProAliasToken, RulesState as GRulesState } from '@gx-design-vue/pro-provider'
 import type {
-  PropType,
-  VNode,
-  VNodeChild,
-  CSSProperties as VueCSSProperties
-} from 'vue'
-import type { CSSObject as ProCssObject } from 'ant-design-vue'
-import type { ProColumnType as GProColumnType } from '@gx-design-vue/pro-table'
-import type { DeepPartial, ProAliasToken as GProAliasToken } from '@gx-design-vue/pro-provider'
+  CustomRenderResult as GCustomRenderResult,
+  ProColumnsType as GProColumnsType,
+  ProColumnType as GProColumnType,
+  ProTableBodyCellProps as GProTableBodyCellProps
+} from '@gx-design-vue/pro-table'
+import type { RecordType } from '@gx-design-vue/pro-utils'
+import type { PropType, CSSProperties as VueCSSProperties } from 'vue'
 
 declare global {
   const __APP_INFO__: {
@@ -20,35 +19,41 @@ declare global {
     lastBuildTime: string;
   }
 
-  declare interface LocalResult {
-    value: any;
-    time: string;
-    expired: number;
-  }
-
   type ProAliasToken = DeepPartial<GProAliasToken>
-  declare type CSSProperties = VueCSSProperties
-  declare type ProColumnType = GProColumnType
-  declare type CSSObject = ProCssObject
+  type ProColumnType<DataValue = any, SearchParama = RecordType> = GProColumnType<
+    DataValue,
+    SearchParama
+  >
+  type ProColumnsType<DataValue = any, SearchParama = RecordType> = GProColumnsType<
+    DataValue,
+    SearchParama
+  >
+  type ProTableBodyCellProps<T = Record<string, any>> = GProTableBodyCellProps<T>
+  type CustomRenderResult<T = Record<string, any>> = GCustomRenderResult<T>
+  type RulesState<T> = GRulesState<T>
 
   // vue
-  declare type Key = string | number
-  declare type VuePropType<T> = PropType<T>
-  declare type VueNode = VNodeChild | JSX.Element
-  declare type Recordable<T = any> = Record<string, T>
+  type VuePropType<T> = PropType<T>
+  type CSSProperties = VueCSSProperties
+
+  type Recordable<T = any> = Record<string, T>
 
   interface Fn<T = any, R = T> {
     (...arg: T[]): R;
   }
 
-  declare interface ViteEnv {
+  interface ViteEnv {
     VITE_PORT: number;
-    VITE_USE_MODE: 'development' | 'production' | 'pro';
+    VITE_USE_MODE: 'development' | 'production' | 'pro'
+    // proxy 配置
+    VITE_PROXY_PREFIX: string;
+    // 全局 mock 开关
+    VITE_IS_MOCK: boolean
     VITE_USE_MOCK: boolean;
     VITE_NODE_ENV: 'development' | 'production';
     VITE_USE_PWA: boolean;
     VITE_BASE_URL: string;
-    VITE_APP_ENV: 'dev';
+    VITE_APP_ENV: 'dev' | 'pro'
     VUE_APP_VERSION: string;
     VITE_PROXY: [ string, string ][];
     VITE_DROP_CONSOLE: boolean;
@@ -61,37 +66,10 @@ declare global {
     VITE_GITEE_PAGE: string; // gitee 地址
   }
 
-  declare function parseInt(s: string | number, radix?: number): number
-
-  declare function parseFloat(string: string | number): number
-
-  class FilerobotImageEditor {
-    constructor(selector: HTMLElement, options: any) {
-    }
-  }
-
   interface Window {
     editorConfig: {
       isFirstRenderCropUpdated?: boolean
     };
     FilerobotImageEditor?: any
-  }
-
-  namespace JSX {
-    type Element = VNode
-
-    interface ElementClass extends Vue {}
-
-    interface ElementAttributesProperty {
-      $props: any;
-    }
-
-    interface IntrinsicElements {
-      [elem: string]: any;
-    }
-
-    interface IntrinsicAttributes {
-      [elem: string]: any;
-    }
   }
 }

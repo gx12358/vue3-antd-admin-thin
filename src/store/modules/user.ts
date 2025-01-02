@@ -1,42 +1,34 @@
-import { reactive, toRefs } from 'vue'
-import { defineStore } from 'pinia'
-import { notification } from 'ant-design-vue'
-import { defaultSettings } from '@gx-config'
-import type { UserDetails, UserInfo } from '@gx-mock/config/user'
-import { defaultUser } from '@gx-mock/config/user'
 import { getUserInfo, login, logout } from '@/services/userCenter'
 import { getAccessToken, removeAccessToken, setAccessToken } from '@/utils/accessToken'
 import { timeFix } from '@/utils/util'
-import { useStoreRoutes } from './routes'
+import { defaultSettings } from '@gx-config'
+import { useReactiveState } from '@gx-design-vue/pro-hooks'
+import { isArray, isNumber, isObject } from '@gx-design-vue/pro-utils'
+import { notification } from 'ant-design-vue'
+import { defineStore } from 'pinia'
+import { useStoreDict } from './dict'
 import { useStorePermission } from './permission'
-import { useStoreTabsRouter } from './tabsRouter'
-import { isObject } from '@gx-design-vue/pro-utils'
-import { cloneDeep } from 'lodash-es'
+import { useStoreRoutes } from './routes'
 
-const { tokenName, loginInterception } = defaultSettings
+const { loginInterception } = defaultSettings.system
 
 export interface UserState {
   accessToken: string;
   userInfo: UserDetails;
 }
 
-type UserStateKey = keyof UserState
+// 0 返回登录页 1 成功 2 返回注册页
+export type CheckUserStatus = 0 | 1 | 2
 
 export const useStoreUser = defineStore('user', () => {
+  const dict = useStoreDict()
   const routes = useStoreRoutes()
-  const auth = useStorePermission()
-  const tabsRouter = useStoreTabsRouter()
+  const permission = useStorePermission()
 
-  const state = reactive<UserState>({
+  const [ state, setValue ] = useReactiveState<UserState>({
     accessToken: getAccessToken(),
     userInfo: {} as UserDetails
-  })
-
-  const userDetails = computed<UserDetails>(() => state.userInfo)
-
-  const setState: (params: Partial<Record<UserStateKey, UserState[UserStateKey]>>) => void = (params) => {
-    Object.assign(state, params)
-  }
+  }, { omitNil: false, omitEmpty: false })
 
   /**
    * @Author      gx12358
@@ -44,13 +36,8 @@ export const useStoreUser = defineStore('user', () => {
    * @lastTime    2022/1/11
    * @description 登录拦截放行时，设置虚拟角色
    */
-  const setVirtualUserInfo = () => {
-    auth.changeValue('admin', true)
-    auth.changeValue('role', defaultUser.roles)
-    auth.changeValue('ability', defaultUser.permissions)
-    setState({
-      userInfo: defaultUser.user as UserDetails
-    })
+  const setVirtualUserInfo = (): CheckUserStatus => {
+    return 1
   }
 
   /**
@@ -59,35 +46,38 @@ export const useStoreUser = defineStore('user', () => {
    * @lastTime    2022/1/11
    * @description 登录
    */
-  const userLogin = async (params): Promise<boolean> => {
-    const response: ResponseResult<{ expiresIn: number; }> = await login(params)
-    const accessToken = response?.data?.[tokenName]
-    if (accessToken) {
-      const expiresIn = response?.data?.expiresIn
-      state.accessToken = accessToken
-      setAccessToken(accessToken, expiresIn ? expiresIn * 60 * 1000 : 0)
-      return true
+  const userLogin = async (params: any): Promise<boolean> => {
+    const response: ResponseResult<{ token: string; expiresIn: number }> = await login(params)
+    if (response) {
+      const accessToken = response.data?.token
+      if (accessToken) {
+        setValue({ accessToken })
+        setAccessToken(accessToken, response.data?.expiresIn ? response.data?.expiresIn * 60 * 1000 : 0)
+        return true
+      }
     }
+
     return false
   }
 
-  const updateUserInfo = async () => {
-    const response: ResponseResult<UserInfo> = await getUserInfo()
-    const { user, roles, permissions } = response?.data || {} as UserInfo
+  const updateUserInfo = async (): Promise<CheckUserStatus> => {
+    let status: CheckUserStatus = 0
+    const response: ResponseResult<null, UserInfo> = await getUserInfo()
+    const { user, roles, permissions } = response || {} as UserInfo
     if (response && user && isObject(user)) {
-      if (user.userName && roles && Array.isArray(roles)) {
-        auth.changeValue('role', roles)
-        auth.changeValue('ability', permissions)
-
-        setState({
-          userInfo: cloneDeep(user)
-        })
-        notification.success({
-          message: `欢迎登录${state.userInfo?.userName}`,
-          description: `${timeFix()}！`
-        })
+      if (isNumber(user.userId) && roles && isArray(roles)) {
+        status = 1
+        permission.setValue({ admin: user.admin, role: roles, ability: permissions })
+        setValue({ userInfo: { ...user } })
+        setTimeout(() => {
+          notification.success({
+            message: `欢迎登录${state.userInfo.value?.nickName}`,
+            description: `${timeFix()}！`
+          })
+        }, 200)
       }
     }
+    return status
   }
 
   /**
@@ -96,21 +86,24 @@ export const useStoreUser = defineStore('user', () => {
    * @lastTime    2022/1/11
    * @description 获取用户信息
    */
-  const checkUserPremission = async () => {
-    if (loginInterception)
-      await updateUserInfo()
-    else setVirtualUserInfo()
-    return Object.keys(state.userInfo).length
+  const checkUserPremission = async (): Promise<CheckUserStatus> => {
+    let status: CheckUserStatus = 0
+    permission.setValue({ isRelogin: true })
+    if (loginInterception) {
+      status = await updateUserInfo()
+    } else {
+      status = setVirtualUserInfo()
+    }
+    permission.setValue({ isRelogin: false })
+    return status
   }
 
   const resetPermissions = () => {
-    state.accessToken = ''
     removeAccessToken()
-    auth.changeValue('admin', false)
-    auth.changeValue('role', [])
-    auth.changeValue('ability', [])
-    routes.resetRoute()
-    tabsRouter.blankingTabs()
+    setValue({ accessToken: '', userInfo: {} })
+    dict.clear()
+    permission.setValue({ admin: false, role: undefined, ability: [] })
+    routes.setValue({ routes: [] })
   }
 
   /**
@@ -125,11 +118,10 @@ export const useStoreUser = defineStore('user', () => {
   }
 
   return {
-    ...toRefs(state),
-    userDetails,
+    ...state,
     userLogin,
     userLogut,
-    setState,
+    setValue,
     resetPermissions,
     checkUserPremission
   }

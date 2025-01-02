@@ -1,34 +1,22 @@
 <script setup lang="ts">
+import type { AppRouteModule, Meta } from '@gx-design-vue/pro-layout'
+import { PageTranstion, useProLayoutContext } from '@gx-design-vue/pro-layout'
 import { computed, ref } from 'vue'
-import type { BasicLayoutProps, Meta } from '@gx-design-vue/pro-layout'
-import { PageTranstion } from '@gx-design-vue/pro-layout'
 import IframeView from '../views/Iframe/index.vue'
 
-defineProps({
-  reloadStatus: {
-    type: Boolean as VuePropType<boolean>,
-    default: true
-  },
-  animate: {
-    type: Object as VuePropType<BasicLayoutProps['animate']>,
-    default: () => {
-      return {}
-    }
-  }
-})
-
-const { global } = useStore()
+const { global, layout } = useStore()
 const router = useRouter()
+const { renderRouterView } = useProLayoutContext()
 
-const keepliveRouterNames = ref([])
+const keepLiveRouterNames = ref<any[]>([])
 
 const iframeSrc = computed(() => {
   const meta = router.currentRoute.value?.meta as Meta
-  return meta?.target && Number(meta?.targetStatus) === 0 ? meta?.target || '' : ''
+  return meta?.link && Number(meta?.linkStatus) === 0 ? meta?.link || '' : ''
 })
 
 watch(() => global.keepAlive, () => {
-  keepliveRouterNames.value = router.getRoutes()
+  keepLiveRouterNames.value = (router.getRoutes() as AppRouteModule[])
     .filter(item => global.keepAlive || (item.meta as Meta)?.keepAlive)
     .map(item => item.name)
 }, { immediate: true })
@@ -37,14 +25,14 @@ watch(() => global.keepAlive, () => {
 <template>
   <router-view>
     <template #default="{ Component }">
-      <PageTranstion v-bind="animate">
-        <template v-if="reloadStatus">
-          <keep-alive :include="keepliveRouterNames">
+      <PageTranstion v-bind="layout.config.settings.animate">
+        <template v-if="renderRouterView">
+          <keep-alive :include="keepLiveRouterNames">
             <component :is="Component" />
           </keep-alive>
         </template>
       </PageTranstion>
     </template>
   </router-view>
-  <IframeView v-if="iframeSrc" :frameSrc="iframeSrc" />
+  <IframeView v-if="iframeSrc" :frame-src="iframeSrc" />
 </template>

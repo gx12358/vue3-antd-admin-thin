@@ -1,16 +1,16 @@
-import { message } from 'ant-design-vue'
-import { defaultSettings, network } from '@gx-config'
+import type { GAxiosOptions, XhtInstance } from './typings'
 import { useStoreUser } from '@/store'
 import { isDev, typeViteEnv } from '@/utils/env'
 import { tansParams } from '@/utils/util'
 import { checkURL } from '@/utils/validate'
+import { defaultSettings, network } from '@gx-config'
 import { isBoolean } from '@gx-design-vue/pro-utils'
-import { GAxios } from './XHR'
-import type { GAxiosOptions, XhtInstance } from './typings'
-import { RequestEnum } from './typings'
+import { message } from 'ant-design-vue'
 import { handleCode } from './checkStatus'
+import { RequestEnum } from './typings'
+import { GAxios } from './XHR'
 
-const { tokenName, requestPrefix, mockPrefixUrl } = defaultSettings
+const { token, mock } = defaultSettings
 
 const { requestTimeout, successCode } = network
 
@@ -36,7 +36,7 @@ const xhtInstance: XhtInstance = {
       throw new Error('请求出错，请稍候重试')
     }
     //  这里 code，result，message为 后台统一的字段，需要在 types.ts内修改为项目自己的接口返回格式
-    const { code, msg = '', message = '' } = data
+    const { code, message = '' } = data
 
     const codeVerificationArray = successCode
 
@@ -48,7 +48,7 @@ const xhtInstance: XhtInstance = {
 
     // 在此处根据自己项目的实际情况对不同的code执行不同的操作
     // 如果不希望中断当前请求，请return数据，否则直接抛出异常即可
-    handleCode(code, message || msg)
+    handleCode(code, message)
 
     return Promise.resolve(false)
   },
@@ -64,11 +64,10 @@ const xhtInstance: XhtInstance = {
     }
 
     if (!checkURL(config.url)) {
-      if (config.isMock) {
-        config.url = `${mockPrefixUrl}${config.url}`
-      } else {
-        config.url = `${typeViteEnv('VITE_BASE_URL')}${isDev ? requestPrefix || '' : ''}${config.url}`
-      }
+      const isMock = isBoolean(typeViteEnv('VITE_IS_MOCK')) ? typeViteEnv('VITE_IS_MOCK') : config.isMock
+      const prefix = isDev() && !isMock ? typeViteEnv('VITE_PROXY_PREFIX') : ''
+      const baseUrl = isMock ? mock.prefix : typeViteEnv('VITE_BASE_URL')
+      config.url = `${prefix}${baseUrl}${config.url}`
     }
 
     return config
@@ -78,10 +77,18 @@ const xhtInstance: XhtInstance = {
    * @description: 请求拦截器处理
    */
   requestInterceptors: (config) => {
+    const { name } = token
     const user = useStoreUser()
     const carryToken = isBoolean(config.carryToken) ? config.carryToken : true
-    if (user.accessToken && carryToken)
-      config.headers[tokenName] = user.accessToken
+    if (user.accessToken && carryToken) {
+      if (config.headers) {
+        config.headers[name] = user.accessToken
+      } else {
+        config.headers = {
+          [name]: user.accessToken
+        }
+      }
+    }
     return config
   },
 
@@ -99,7 +106,7 @@ const xhtInstance: XhtInstance = {
     const { response } = error
     let errorMessage = error.message || ''
     if (error.response && error.response.data) {
-      const { status } = response
+      const { status = 404 } = response || {}
       handleCode(status, errorMessage)
       return Promise.resolve(false)
     } else {
@@ -139,6 +146,7 @@ function createXhr(opt?: Partial<GAxiosOptions>) {
   })
 }
 
-const request: <T = any, R = undefined>(opt?: GAxiosOptions) => Promise<ResponseResult<T, R>> = opt => createXhr().request(opt)
+const request: <T = any, R = undefined>(opt?: GAxiosOptions) => Promise<ResponseResult<T, R>> = opt => createXhr()
+  .request(opt)
 
 export default request

@@ -1,7 +1,7 @@
 import type { Canceler } from 'axios'
-import axios from 'axios'
-import { isFunction } from '@gx-design-vue/pro-utils'
 import type { GAxiosOptions } from './typings'
+import { isFunction } from '@gx-design-vue/pro-utils'
+import axios from 'axios'
 
 export const getPendingUrl = (
   config: GAxiosOptions,
@@ -15,12 +15,12 @@ export class AxiosCanceler {
   constructor(ignoreCancel?: boolean) {
     this.pendingMap = new Map<string, Canceler>()
 
-    this.ignoreCancelToken = ignoreCancel
+    this.ignoreCancelToken = !!ignoreCancel
   }
 
   /**
    * Add request
-   * @param {Object} config
+   * @param {object} config
    */
   addPending(config: GAxiosOptions) {
     !this.ignoreCancelToken && this.removePending(config)
@@ -46,7 +46,7 @@ export class AxiosCanceler {
 
   /**
    * Removal request
-   * @param {Object} config
+   * @param {object} config
    */
   removePending(config: GAxiosOptions, key?: string) {
     const url = getPendingUrl(config, key)

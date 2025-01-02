@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { h, reactive } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { LockOutlined, UserOutlined } from '@ant-design/icons-vue'
-import { GProFormCheckbox, GProFormLogin, GProFormPassword, GProFormText } from '@gx-design-vue/pro-form'
-import { GlobalFooter } from '@gx-design-vue/pro-layout'
 import Logo from '@/assets/logo.png'
+import { isDev } from '@/utils/env'
+import { LockOutlined, UserOutlined } from '@ant-design/icons-vue'
+import { GlobalFooter } from '@gx-design-vue/pro-layout'
+import { useProForm } from '@gx-design-vue/pro-provider'
+import { reactive } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 interface UserState {
   userName: string
@@ -19,23 +20,22 @@ interface loginState {
 
 const { pkg } = __APP_INFO__
 
-const userOutlined = h(UserOutlined)
-const lockOutlined = h(LockOutlined)
-
 const store = useStore()
 const route = useRoute()
 const router = useRouter()
 
 const userForm = reactive({
-  userName: 'admin',
-  password: 'gx.design',
+  userName: isDev() ? 'admin' : '',
+  password: isDev() ? 'gx.design' : '',
   autoLogin: true
 } as UserState)
 
 const userRules = reactive({
-  userName: [{ required: true, message: '用户名是必填项！' }],
-  password: [{ required: true, message: '密码是必填项！' }]
+  userName: [ { required: true, message: '用户名是必填项！' } ],
+  password: [ { required: true, message: '密码是必填项！' } ]
 })
+
+const { validate, validateInfos } = useProForm(userForm, userRules)
 
 const state: loginState = reactive({
   redirect: '/',
@@ -59,46 +59,72 @@ const handleRoute = () => {
     : state.redirect
 }
 
-const handleSubmit = async (value) => {
-  const response: any = await store.user.userLogin({ ...value })
-  if (response) {
-    router.push({ path: handleRoute() })
-  }
+const handleSubmit = async () => {
+  validate().then(async () => {
+    const response: any = await store.user.userLogin(toRaw(userForm))
+    if (response) {
+      router.push({ path: handleRoute() })
+    }
+  }).catch(() => {})
 }
 </script>
 
 <template>
   <div :class="$style['login-container']">
     <div :class="$style.content">
-      <GProFormLogin
-        style="margin-top: 40px"
-        :model="userForm"
-        :rules="userRules"
-        :logo="Logo"
-        title="GX Pro Admin"
-        @submit="handleSubmit"
-      >
-        <template #subTitle>
-          <p>GX Pro Admin 是一套基于</p>
-          vue（{{ state.dependencies.vue }}） + ant-design-vue（{{
-            state.dependencies['ant-design-vue']
-          }}） 开发的一套后台系统1111
-        </template>
-        <GProFormText
-          name="userName"
-          :fieldProps="{ size: 'large', prefix: userOutlined }"
-          placeholder="用户名: admin"
-        />
-        <GProFormPassword
-          name="password"
-          :fieldProps="{ size: 'large', prefix: lockOutlined }"
-          placeholder="密码: gx.design"
-        />
-        <div class="mb-[24px]">
-          <GProFormCheckbox noStyle name="autoLogin">自动登录</GProFormCheckbox>
-          <a class="float-right">忘记密码</a>
+      <div :class="$style.loginWrapper">
+        <div :class="$style.loginBackground" />
+        <div :class="$style.loginTop">
+          <div :class="$style.loginHeader">
+            <div :class="$style.loginLogo">
+              <img :src="Logo" alt="">
+            </div>
+            <div :class="$style.loginTitle">
+              GX Pro Admin
+            </div>
+          </div>
+          <div :class="$style.loginDesc">
+            GX Pro Admin 是一套基于vue（{{ state.dependencies.vue }}） + ant-design-vue（{{
+              state.dependencies['ant-design-vue']
+            }}） 开发的一套后台系统
+          </div>
         </div>
-      </GProFormLogin>
+        <div :class="$style.loginMain">
+          <a-tabs centered>
+            <a-tab-pane tab="账号密码登录" tab-key="user-pd">
+              <a-form>
+                <a-form-item v-bind="validateInfos.userName" :required="false">
+                  <a-input
+                    v-model:value="userForm.userName"
+                    size="large"
+                    allow-clear
+                    placeholder="用户名: admin"
+                  >
+                    <template #prefix>
+                      <UserOutlined />
+                    </template>
+                  </a-input>
+                </a-form-item>
+                <a-form-item v-bind="validateInfos.password" :required="false">
+                  <a-input-password
+                    v-model:value="userForm.password"
+                    size="large"
+                    allow-clear
+                    placeholder="密码: gx.design"
+                  >
+                    <template #prefix>
+                      <LockOutlined />
+                    </template>
+                  </a-input-password>
+                </a-form-item>
+                <a-form-item class="mt-24px">
+                  <a-button size="large" type="primary" block @click="handleSubmit">登录</a-button>
+                </a-form-item>
+              </a-form>
+            </a-tab-pane>
+          </a-tabs>
+        </div>
+      </div>
     </div>
     <GlobalFooter />
   </div>

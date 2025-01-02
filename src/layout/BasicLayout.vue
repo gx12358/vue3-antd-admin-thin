@@ -1,123 +1,121 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { isFunction, isString, merge } from '@gx-design-vue/pro-utils'
-import type { BaseLayoutDesignToken, ThemeConfig } from '@gx-design-vue/pro-provider'
-import type { AppRouteModule, BasicLayoutProps } from '@gx-design-vue/pro-layout'
+import type { ProLayoutExpose } from '@gx-design-vue/pro-layout'
+import type { BaseLayoutDesignToken, ProLayoutConfig } from '@gx-design-vue/pro-provider'
+import { appList } from '@/common'
+import { globalConfirm } from '@/components/GlobalLayout/Confirm'
+import { useThemeStyle } from '@/hooks/web'
 import {
+  AppsLogoList,
   GProLayout,
+  PageLock,
+  RightContent,
   SettingDrawer,
-  clearMenuItem,
-  getMatchedList,
-  getMenuData,
-  getMenuFirstLastChildPath,
-  hanlePathKey,
+  useLayoutMenu
 } from '@gx-design-vue/pro-layout'
-import RightContent from '@/components/GlobalLayout/RightContent'
+import { useRouter } from 'vue-router'
 import ProContent from './ContentView.vue'
 
-const { global } = useStore()
+const { layout, user } = useStore()
 
 const router = useRouter()
 
-const reloadStatus = ref(true)
+const collapsed = ref(false)
 
-const routeData: AppRouteModule[] = router.getRoutes() as any
+const { breadcrumbRouters, matchedKeys, menuData } = useLayoutMenu({})
 
-const menuState = reactive<Pick<BasicLayoutProps, 'menuData' | 'levelMenuData'>>({
-  menuData: [],
-  levelMenuData: []
-})
-
-const baseState: Partial<BasicLayoutProps> = reactive({
-  selectedKeys: [],
-  openKeys: [],
-  collapsed: false
-})
-
-const matchedMenu = computed(() => getMatchedList(
-  menuState.levelMenuData as AppRouteModule[] || [],
-  hanlePathKey(router.currentRoute.value as AppRouteModule)
-))
-
-const breadcrumbRouters = computed(() => {
-  return matchedMenu.value.map((menuItem: AppRouteModule) => {
-    const path = getMenuFirstLastChildPath(menuItem.meta?.hideChildrenInMenu ? [] : menuItem.children || [])
-    return {
-      path: path ? isString(menuItem.redirect) ? menuItem.redirect as string : isFunction(menuItem.redirect)
-        ? (menuItem.redirect as any)?.() as string
-        : '' || menuItem.path : '',
-      breadcrumbName: menuItem.meta?.title || ''
+watch([
+  () => router.currentRoute.value?.meta?.hidden,
+  () => layout.config.settings.layout
+], ([ val ]) => {
+  layout.setValue({
+    config: {
+      settings: { siderWidth: val ? 0 : undefined }
     }
   })
+}, { immediate: true })
+
+const color = useThemeStyle({
+  colorError: 'colorError',
+  colorErrorHover: 'colorErrorHover'
 })
-
-const handleMenuData = () => {
-  const menuInfos = getMenuData(clearMenuItem(routeData))
-  if (router.currentRoute?.value?.meta?.hideMenu) {
-    menuState.menuData = []
-    menuState.levelMenuData = []
-  } else {
-    menuState.menuData = menuInfos.menuData
-    menuState.levelMenuData = menuInfos.levelMenuData
-  }
-}
-
-watch(
-  () => router.currentRoute.value,
-  (val) => {
-    if (val)
-      handleMenuData()
-  },
-  { deep: true, immediate: true }
-)
 
 watchEffect(() => {
-  if (router.currentRoute.value) {
-    baseState.selectedKeys = matchedMenu.value.map(item => item.path)
-    baseState.openKeys = matchedMenu.value.filter(item => item.path !== router.currentRoute.value.path)
-      .map(item => item.path)
+  const htmlEl = document.querySelector('html')
+  if (htmlEl) {
+    color.colorError && htmlEl.style.setProperty('--gx-color-error', color.colorError)
+    color.colorErrorHover && htmlEl.style.setProperty(
+      '--gx-color-error-hover',
+      color.colorErrorHover
+    )
   }
 })
 
-const handleReload = () => {
-  reloadStatus.value = false
-  setTimeout(() => {
-    reloadStatus.value = true
-  }, 200)
+const changeSettings = (value: Partial<ProLayoutConfig>) => {
+  layout.setValue({
+    config: {
+      settings: value
+    }
+  })
 }
 
-const changeTabs = (_routers: any) => {
-  // console.log(_routers)
+const changeLayoutTheme = (value: Partial<BaseLayoutDesignToken>) => {
+  layout.setValue({
+    config: {
+      token: {
+        layout: value
+      }
+    }
+  })
 }
 
-const changeTheme = (newVal: ThemeConfig) => {
-  global.globalLayout = merge(global.globalLayout, { ...newVal })
-}
-
-const changeLayoutTheme = (newVal: BaseLayoutDesignToken) => {
-  global.globalLayout.token = merge(global.globalLayout.token, { ...newVal })
+const userLogout = (callBack: Fn) => {
+  globalConfirm({
+    title: '温馨提醒',
+    content: '是否确认退出系统?',
+    okText: '确认',
+    cancelText: '取消',
+    onOk: () => {
+      user.userLogut().then((_) => {}).finally(() => {
+        router.push({ path: '/user' })
+        callBack?.()
+      })
+    }
+  })
 }
 </script>
 
 <template>
   <GProLayout
-    v-model:collapsed="baseState.collapsed"
-    v-model:selectedKeys="baseState.selectedKeys"
-    v-model:openKeys="baseState.openKeys"
-    v-bind="global.globalLayout as BasicLayoutProps"
+    :ref="val => layout.proLayoutRef = val as unknown as ProLayoutExpose"
+    v-model:collapsed="collapsed"
+    v-model:selected-keys="matchedKeys.selectedKeys"
+    v-model:open-keys="matchedKeys.openKeys"
+    v-bind="layout.config"
+    :route="menuData"
     :breadcrumb="{ routes: breadcrumbRouters }"
-    :menu-data="menuState.menuData as AppRouteModule[]"
-    @changeTabs="changeTabs"
-    @reloadPage="handleReload"
-    @menuHeaderClick="() => router.push('/')"
+    @menu-header-click="() => router.push('/')"
   >
-    <template v-if="global.globalLayout.layout === 'wide'" #menuExtraRender>
-      <div class="text-center"> 额外元素</div>
+    <template #appLogoListRender>
+      <AppsLogoList :app-list="appList" />
+    </template>
+    <template v-if="layout.config.settings.layout === 'wide'" #menuHeaderRender>
+      <div class="text-center">
+        额外元素
+      </div>
     </template>
     <template #rightContentRender>
-      <RightContent />
+      <RightContent :avatar="user.userInfo.avatar" :name="user.userInfo.nickName" @logout="userLogout" />
     </template>
-    <ProContent :animate="global.globalLayout.animate" :reloadStatus="reloadStatus" />
-    <SettingDrawer :settings="global.globalLayout" @change="changeTheme" @changeLayout="changeLayoutTheme" weakmode show-progress />
+    <template #pageLockRender>
+      <PageLock :avatar="user.userInfo.avatar" :name="user.userInfo.nickName" />
+    </template>
+    <ProContent />
+    <SettingDrawer
+      weakmode
+      show-progress
+      :settings="layout.config.settings"
+      @change="changeSettings"
+      @layout-change="changeLayoutTheme"
+    />
   </GProLayout>
 </template>

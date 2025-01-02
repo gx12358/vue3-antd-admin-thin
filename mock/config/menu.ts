@@ -1,8 +1,7 @@
-import dayjs from 'dayjs'
-import type { MenuDataItem } from '@gx-design-vue/pro-layout'
 import { getLevelData } from '@gx-design-vue/pro-utils'
+import dayjs from 'dayjs'
 
-export const menuList: MenuDataItem[] = getLevelData([
+export const menuList: SystemMenuItem[] = getLevelData<SystemMenuItem>([
   {
     component: 'Page/one',
     createTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
@@ -11,11 +10,8 @@ export const menuList: MenuDataItem[] = getLevelData([
     title: '页面一',
     name: 'PageOne',
     menuType: 'C',
-    orderNum: '2',
-    isFrame: '1',
+    order: 1,
     parentId: 0,
-    target: '',
-    hidden: false,
-    outLinkType: 0
+    hidden: false
   }
 ]).map(item => ({ ...item, children: [] }))

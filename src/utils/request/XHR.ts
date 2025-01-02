@@ -1,14 +1,11 @@
 import type { AxiosError } from 'axios'
+import type { GAxiosInstance, GAxiosOptions, GAxiosResponse } from './typings'
+import { isFunction } from '@gx-design-vue/pro-utils'
 import axios from 'axios'
 import { cloneDeep } from 'lodash-es'
 import qs from 'qs'
-import { isFunction } from '@gx-design-vue/pro-utils'
-import type { GAxiosInstance, GAxiosOptions, GAxiosResponse } from './typings'
-import { ContentTypeEnum, RequestEnum } from './typings'
 import { AxiosCanceler } from './axiosCancel'
-
-export const getPendingUrl = (config: GAxiosOptions) => config.cancelKey || [ config.method, config.url ].join(
-  '&')
+import { ContentTypeEnum, RequestEnum } from './typings'
 
 /**
  * @Author      gx12358
@@ -99,8 +96,8 @@ export class GAxios {
     }
   }
 
-  request<T = ResponseResult | boolean>(config: GAxiosOptions): Promise<T> {
-    let conf: GAxiosOptions = cloneDeep(config)
+  request<T = ResponseResult | boolean>(config?: GAxiosOptions): Promise<T> {
+    let conf = cloneDeep(config || {} as GAxiosOptions)
 
     const opt: GAxiosOptions = Object.assign({}, this.options, conf)
 
@@ -117,10 +114,11 @@ export class GAxios {
         .then((res: GAxiosResponse) => {
           if (transformResponseHook && isFunction(transformResponseHook)) {
             try {
-              const ret = transformResponseHook(res, config)
+              const ret = transformResponseHook(res, config || {})
               resolve(ret)
-            } catch (err) {
-              resolve(false as any)
+            } catch (error) {
+              console.error('request-error', error)
+              resolve(false as unknown as Promise<T>)
               return
             }
             return

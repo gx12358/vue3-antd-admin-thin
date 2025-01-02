@@ -3,12 +3,86 @@
   flex-direction: column;
   height: 100vh;
   overflow: auto;
-  background: #f0f2f5;
+  background-color: rgb(248, 248, 250);
+}
+
+.loginBackground {
+  z-index: 10;
+  pointer-events: none;
+  position: absolute;
+  top: -250px;
+  left: 50%;
+  transform: translateX(-50%) scale(1.5);
+  width: 600px;
+  height: 400px;
+  opacity: 0.2;
+  filter: blur(69px);
+  will-change: transform;
+  animation-timeline: auto;
+  animation-range-start: normal;
+  animation-range-end: normal;
+  background: linear-gradient(135deg, rgb(114, 46, 209) 0%, rgb(22, 119, 255) 30%, rgb(245, 34, 45) 70%, rgb(19, 194, 194) 100%) 0% 0% / 200% 200%;
+  animation: 10s ease 0s infinite normal none running glow;
 }
 
 .content {
   flex: 1;
-  padding: 32px 0;
+  
+  .loginWrapper {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    height: 100%;
+    padding-inline: 32px;
+    padding-block: (24px + 32px);
+    overflow: auto;
+    background: inherit;
+    
+    .loginTop {
+      text-align: center;
+      
+      .loginHeader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 44px;
+        line-height: 44px;
+        
+        .loginLogo {
+          width: 44px;
+          height: 44px;
+          margin-inline-end: 16px;
+          vertical-align: top;
+          
+          img {
+            width: 100%;
+          }
+        }
+        
+        .loginTitle {
+          position: relative;
+          inset-block-start: 2px;
+          font-weight: 600;
+          font-size: 33px;
+        }
+      }
+      
+      .loginDesc {
+        margin-block-start: 12px;
+        margin-block-end: 40px;
+        color: rgba(0, 0, 0, 0.65);
+        font-size: 14px;
+      }
+    }
+    
+    .loginMain {
+      width: 328px;
+      min-width: 280px;
+      max-width: 75vw;
+      margin: 0 auto;
+    }
+  }
 }
 
 .icon {
@@ -18,21 +92,22 @@
   vertical-align: middle;
   cursor: pointer;
   transition: color 0.3s;
-
+  
   &:hover {
     color: #1677ff;
   }
 }
 
-@media (min-width: 768px) {
-  .login-container {
-    background-image: url(/src/assets/login_images/login_background.svg);
-    background-repeat: no-repeat;
-    background-position: center 110px;
-    background-size: 100%;
+@keyframes glow {
+  0% {
+    background-position: 0px -100%;
   }
-
-  .content {
-    padding: 32px 0 24px;
+  
+  50% {
+    background-position: 200% 50%;
+  }
+  
+  100% {
+    background-position: 0px -100%;
   }
 }

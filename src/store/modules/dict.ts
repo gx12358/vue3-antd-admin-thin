@@ -1,6 +1,6 @@
-import { reactive, toRefs } from 'vue'
+import { useReactiveState } from '@gx-design-vue/pro-hooks'
+import { cloneDeep } from 'lodash-es'
 import { defineStore } from 'pinia'
-import type { DictRecord, DictType } from '@gx-mock/config/dict'
 
 /**
  * @Author      gx12358
@@ -8,21 +8,29 @@ import type { DictRecord, DictType } from '@gx-mock/config/dict'
  * @lastTime    2022/1/11
  * @description store-dict 数字字典
  */
-export interface DictState {
-  data: Partial<Record<DictType, DictRecord[]>>;
+export interface SystemDictData {
+  loading?: boolean;
+  data: DictRecord[]
+}
+
+export type DictState = Record<DictType, SystemDictData>
+
+const defaultState: DictState = {
+  sys_common_status: { data: [] },
+  sys_common_category: { data: [] },
+  sys_common_author: { data: [] }
 }
 
 export const useStoreDict = defineStore('dict', () => {
-  const state = reactive<DictState>({
-    data: {}
-  })
+  const [ state, setValue ] = useReactiveState<DictState>(defaultState, { omitEmpty: false })
 
-  const setDictData = (type, value) => {
-    state.data[type] = value
+  function clear() {
+    setValue(cloneDeep(defaultState))
   }
 
   return {
-    ...toRefs(state),
-    setDictData
+    ...state,
+    setValue,
+    clear
   }
 })

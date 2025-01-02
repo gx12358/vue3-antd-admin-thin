@@ -1,12 +1,13 @@
+import type { MenuDataItem } from '@gx-design-vue/pro-layout'
 import type { Router } from 'vue-router'
-import NProgress from 'nprogress'
-import { defaultSettings } from '@gx-config'
+import { useStoreGlobal } from '@/store'
 import getPageTitle from '@/utils/pageTitle'
 import { scrollToContainer } from '@/utils/util'
-import { createStateGuard } from './stateGuard'
+import { defaultSettings } from '@gx-config'
 import { createPermissionGuard } from './permissions'
+import { createStateGuard } from './stateGuard'
 
-const { routesWhiteList } = defaultSettings
+const { routesWhiteList } = defaultSettings.system
 
 export function setupRouterGuard(router: Router) {
   createPageGuard(router)
@@ -18,45 +19,28 @@ export function setupRouterGuard(router: Router) {
 }
 
 export function createPageGuard(router: Router) {
-  const routes = useStoreRoutes()
-  const global = useStoreGlobal()
-
   router.afterEach((to) => {
     const { meta } = to as MenuDataItem
-    document.title = getPageTitle(meta.title || '')
-    if (
-      global.globalLayout.layout !== 'wide' && routes.routerLoadList.every(item => item !== to.path) && routesWhiteList.includes(
-        to.path)
-    ) {
-      routes.addRouterLoadList(to.path)
-    }
+    document.title = getPageTitle(meta?.title || '')
   })
 }
 
 export function createPageLoadingGuard(router: Router) {
-  const routes = useStoreRoutes()
   const global = useStoreGlobal()
 
+  const loadedPaths = new Set<string>()
+
   router.beforeEach(async (to) => {
-    if (
-      global.globalLayout.layout !== 'wide' &&
-      routes.routerLoadList.every(item => item !== to.path) &&
-      routesWhiteList.includes(to.path)
-    ) {
-      routes.setRouteState({
-        routerLoading: true
-      })
+    if (!loadedPaths.has(to.path) && !routesWhiteList.includes(to.path)) {
+      global.setValue({ pageLoading: true })
+      loadedPaths.add(to.path)
     }
 
     return true
   })
 
   router.afterEach((_) => {
-    setTimeout(() => {
-      routes.setRouteState({
-        routerLoading: false
-      })
-    }, global.globalLayout.layout === 'wide' ? 0 : 200)
+    global.setValue({ pageLoading: false })
   })
 }
 
@@ -72,11 +56,11 @@ export function createProgressGuard(router: Router) {
   const global = useStoreGlobal()
   router.beforeEach(() => {
     if (global.showProgressBar)
-      NProgress.start()
-    return true
+      // NProgress.start()
+      return true
   })
 
   router.afterEach(() => {
-    NProgress.done()
+    // NProgress.done()
   })
 }

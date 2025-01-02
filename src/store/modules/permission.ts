@@ -1,19 +1,23 @@
-import { reactive, toRefs } from 'vue'
+import { useReactiveState } from '@gx-design-vue/pro-hooks'
 import { defineStore } from 'pinia'
 
-export const useStorePermission = defineStore('permission', () => {
-  const state = reactive({
-    admin: false,
-    role: [],
-    ability: []
-  })
+export interface PermissionState {
+  admin: boolean
+  isRelogin: boolean
+  role: string[] | undefined
+  ability: string[]
+}
 
-  const changeValue = (type: string, value: any) => {
-    state[type] = value
-  }
+export const useStorePermission = defineStore('permission', () => {
+  const [ state, setValue ] = useReactiveState<PermissionState>({
+    admin: false,
+    isRelogin: false,
+    role: undefined,
+    ability: []
+  }, { omitNil: false, omitEmpty: false })
 
   return {
-    ...toRefs(state),
-    changeValue
+    ...state,
+    setValue
   }
 })
