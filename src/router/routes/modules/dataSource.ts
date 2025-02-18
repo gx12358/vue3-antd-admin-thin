@@ -1,5 +1,3 @@
-import type { AppRouteModule } from '@gx-design-vue/pro-layout'
-
 export default [
   {
     path: '/page1',

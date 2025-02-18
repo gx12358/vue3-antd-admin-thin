@@ -8,7 +8,6 @@ export default antFuEslint({
   markdown: true,
   ignores: [
     'src/assets/**/*.js',
-    'build/vite/plugin/viteMock',
     'public',
     'tsconfig.*.json',
     'tsconfig.json'

@@ -4,14 +4,7 @@ import type { BaseLayoutDesignToken, ProLayoutConfig } from '@gx-design-vue/pro-
 import { appList } from '@/common'
 import { globalConfirm } from '@/components/GlobalLayout/Confirm'
 import { useThemeStyle } from '@/hooks/web'
-import {
-  AppsLogoList,
-  GProLayout,
-  PageLock,
-  RightContent,
-  SettingDrawer,
-  useLayoutMenu
-} from '@gx-design-vue/pro-layout'
+import { AppsLogoList, GProLayout, PageLock, RightContent, SettingDrawer, useLayoutMenu } from '@gx-design-vue/pro-layout'
 import { useRouter } from 'vue-router'
 import ProContent from './ContentView.vue'
 
@@ -35,6 +28,7 @@ watch([
 }, { immediate: true })
 
 const color = useThemeStyle({
+  colorSplit: 'colorSplit',
   colorError: 'colorError',
   colorErrorHover: 'colorErrorHover'
 })
@@ -42,6 +36,7 @@ const color = useThemeStyle({
 watchEffect(() => {
   const htmlEl = document.querySelector('html')
   if (htmlEl) {
+    color.colorSplit && htmlEl.style.setProperty('--gx-color-split', color.colorSplit)
     color.colorError && htmlEl.style.setProperty('--gx-color-error', color.colorError)
     color.colorErrorHover && htmlEl.style.setProperty(
       '--gx-color-error-hover',
@@ -93,7 +88,7 @@ const userLogout = (callBack: Fn) => {
     v-bind="layout.config"
     :route="menuData"
     :breadcrumb="{ routes: breadcrumbRouters }"
-    @menu-header-click="() => router.push('/')"
+    @logo-click="() => router.push('/')"
   >
     <template #appLogoListRender>
       <AppsLogoList :app-list="appList" />

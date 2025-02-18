@@ -55,6 +55,46 @@ export default defineConfig({
         return {}
       }
     } ],
+    [
+      /^bd-(.*)$/,
+      ([, str]) => {
+        return {
+          'border': `1px solid ${str === 'main' ? 'var(--gx-color-split)' : str === 'error' ? 'var(--gx-color-error)' : `#${str}`}`
+        }
+      }
+    ],
+    [
+      /^bd-l-(.*)$/,
+      ([, str]) => {
+        return {
+          'border-left': `1px solid ${str === 'main' ? 'var(--gx-color-split)' : `#${str}`}`
+        }
+      }
+    ],
+    [
+      /^bd-t-(.*)$/,
+      ([, str]) => {
+        return {
+          'border-top': `1px solid ${str === 'main' ? 'var(--gx-color-split)' : `#${str}`}`
+        }
+      }
+    ],
+    [
+      /^bd-r-(.*)$/,
+      ([, str]) => {
+        return {
+          'border-right': `1px solid ${str === 'main' ? 'var(--gx-color-split)' : `#${str}`}`
+        }
+      }
+    ],
+    [
+      /^bd-b-(.*)$/,
+      ([, str]) => {
+        return {
+          'border-bottom': `1px solid ${str === 'main' ? 'var(--gx-color-split)' : `#${str}`}`
+        }
+      }
+    ],
     [ /^text-hidden-(\d+)$/, ([ , d ]) => ({
       'overflow': 'hidden',
       'text-overflow': 'ellipsis',

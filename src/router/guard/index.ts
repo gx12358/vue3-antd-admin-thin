@@ -1,4 +1,3 @@
-import type { MenuDataItem } from '@gx-design-vue/pro-layout'
 import type { Router } from 'vue-router'
 import { useStoreGlobal } from '@/store'
 import getPageTitle from '@/utils/pageTitle'
@@ -20,7 +19,7 @@ export function setupRouterGuard(router: Router) {
 
 export function createPageGuard(router: Router) {
   router.afterEach((to) => {
-    const { meta } = to as MenuDataItem
+    const { meta } = to as SystemMenuItem
     document.title = getPageTitle(meta?.title || '')
   })
 }
